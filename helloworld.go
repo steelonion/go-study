@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"sync"
 )
@@ -19,6 +20,12 @@ type Message struct {
 }
 
 func main() {
+	var rp RollPoint
+	rp = FooRandom{}
+	fmt.Println(rp.GetPoint())
+	rp = FooRandom2{}
+	fmt.Println(rp.GetPoint())
+
 	// 设置处理函数
 	http.HandleFunc("/hello", helloHandler)
 	http.HandleFunc("/count", countHandler)
