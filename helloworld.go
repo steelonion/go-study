@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"sync"
 )
 
@@ -36,25 +37,49 @@ func main() {
 }
 
 func addVarbHandler(w http.ResponseWriter, r *http.Request) {
+
 	// 使用互斥锁保护计数器的并发访问
 	countMu.Lock()
 	defer countMu.Unlock()
 
-	// 添加新的varb
-	testvarbList = append(testvarbList, testvarb{StringField: "test", IntField: count})
+	switch r.Method {
+	case http.MethodPost:
 
-	// 将消息转换为JSON格式
-	jsonData, err := json.Marshal(testvarbList)
-	if err != nil {
+		err := r.ParseForm()
+		if err != nil {
+			http.Error(w, "Failed to parse form data", http.StatusBadRequest)
+			return
+		}
+
+		str := r.Form.Get("name")
+		countstr := r.Form.Get("count")
+
+		paramInt, err := strconv.Atoi(countstr)
+		if err != nil {
+			http.Error(w, "Failed to convert parameter to int", http.StatusBadRequest)
+			return
+		}
+
+		// 添加新的varb
+		testvarbList = append(testvarbList, testvarb{StringField: str, IntField: paramInt})
+
+		// 将消息转换为JSON格式
+		jsonData, err := json.Marshal(testvarbList)
+		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		// 设置响应头为JSON格式
+		w.Header().Set("Content-Type", "application/json")
+
+		// 发送JSON响应
+		w.Write(jsonData)
+		break
+	default:
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
 	}
 
-	// 设置响应头为JSON格式
-	w.Header().Set("Content-Type", "application/json")
-
-	// 发送JSON响应
-	w.Write(jsonData)
 }
 
 func countHandler(w http.ResponseWriter, r *http.Request) {
